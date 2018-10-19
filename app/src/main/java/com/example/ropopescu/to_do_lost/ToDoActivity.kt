@@ -1,5 +1,8 @@
 package com.example.ropopescu.to_do_lost
 
+import android.arch.persistence.db.SupportSQLiteDatabase
+import android.arch.persistence.room.Room
+import android.arch.persistence.room.migration.Migration
 import android.os.Bundle
 import android.support.design.widget.Snackbar
 import android.support.v4.app.DialogFragment
@@ -10,12 +13,18 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import com.example.ropopescu.to_do_lost.NewTaskDialogFragment.NewTaskDialogListener
-import com.example.ropopescu.to_do_lost.db.Task
-import com.example.ropopescu.to_do_lost.db.TodoListDBHelper
+import com.example.ropopescu.to_do_lost.db.AppDatabase
+import com.example.ropopescu.to_do_lost.db.asyncdb.RetrieveTaskAsyncTask
+import com.example.ropopescu.to_do_lost.db.TodoListDBContract
+import com.example.ropopescu.to_do_lost.db.TodoListDBContract.DATABASE_NAME
+import com.example.ropopescu.to_do_lost.db.asyncdb.AddTaskAsyncTask
+import com.example.ropopescu.to_do_lost.db.asyncdb.DeleteTaskAsyncTask
+import com.example.ropopescu.to_do_lost.db.asyncdb.UpdateTaskAsyncTask
+import com.example.ropopescu.to_do_lost.domain.Task
 
 import kotlinx.android.synthetic.main.activity_to_do.*
 
-class ToDo : AppCompatActivity(), NewTaskDialogListener {
+class ToDoActivity : AppCompatActivity(), NewTaskDialogListener {
 
     companion object  {
         const val NEW_TASK_TAG = "newtask"
@@ -27,12 +36,15 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
     private var listAdapter: ArrayAdapter<Task>? = null
     private var showMenuItems = false
     private var selectedItem = -1
-    private var dbHelper: TodoListDBHelper = TodoListDBHelper(this)
+    private var database: AppDatabase? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_to_do)
         setSupportActionBar(toolbar)
+        database = Room.databaseBuilder(applicationContext, AppDatabase::class.java, DATABASE_NAME)
+                .fallbackToDestructiveMigration()
+                .build()
 
         listView = this.findViewById(R.id.listview)
         listView?.onItemClickListener =
@@ -47,10 +59,12 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
        dialog.dismiss()
     }
 
-    override fun onDialogPositiveClick(dialog: DialogFragment, task: String) {
+    override fun onDialogPositiveClick(dialog: DialogFragment, taskDetails: String) {
         if (NEW_TASK_TAG == dialog.tag) {
-            val newTask = dbHelper.addNewTask(Task(task, ""))
-            todoListItems.add(newTask)
+            val task = Task(taskDetails, "")
+            val taskId = AddTaskAsyncTask(database, task).execute().get()
+            task.taskId = taskId
+            todoListItems.add(task)
             listAdapter?.notifyDataSetChanged()
 
 
@@ -58,8 +72,8 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
                     Snackbar.LENGTH_LONG).setAction("Action", null).show()
 
         } else if(UPDATE_TASK_TAG == dialog.tag) {
-            todoListItems[selectedItem].taskDetails = task
-            dbHelper.updateTask(todoListItems[selectedItem])
+            todoListItems[selectedItem].taskDetails = taskDetails
+            UpdateTaskAsyncTask(database, todoListItems[selectedItem]).execute().get()
 
             listAdapter?.notifyDataSetChanged()
             selectedItem = -1
@@ -95,7 +109,7 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
             } else if (R.id.delete_item == item?.itemId) {
                 val selectedTask = todoListItems[selectedItem]
                 todoListItems.removeAt(selectedItem)
-                dbHelper.deleteTask(selectedTask)
+                DeleteTaskAsyncTask(database, selectedTask).execute()
 
                 listAdapter?.notifyDataSetChanged()
                 selectedItem = -1
@@ -103,7 +117,7 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
                         Snackbar.LENGTH_LONG).setAction("Action", null).show()
             } else if(R.id.complete_item == item?.itemId) {
                 todoListItems[selectedItem].completed = 1
-                dbHelper.updateTask(todoListItems[selectedItem])
+
 
                 Snackbar.make(fab, "Task completed",
                         Snackbar.LENGTH_LONG).setAction("Action", null).show()
@@ -113,7 +127,7 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
     }
 
     override fun onDestroy() {
-        dbHelper.close()
+
         super.onDestroy()
     }
 
@@ -129,7 +143,7 @@ class ToDo : AppCompatActivity(), NewTaskDialogListener {
     }
 
     private fun populateListView() {
-        todoListItems = dbHelper.retrieveTaskList()
+        todoListItems = RetrieveTaskAsyncTask(database).execute().get() as ArrayList<Task>
         listAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, todoListItems)
         listView?.adapter = listAdapter
     }

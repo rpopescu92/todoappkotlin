@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.provider.BaseColumns
 import com.example.ropopescu.to_do_lost.db.TodoListDBContract.DATABASE_NAME
 import com.example.ropopescu.to_do_lost.db.TodoListDBContract.DATABASE_VERSION
+import com.example.ropopescu.to_do_lost.domain.Task
 
 class TodoListDBHelper(context: Context): SQLiteOpenHelper (context, DATABASE_NAME, null, DATABASE_VERSION){
 

@@ -3,7 +3,7 @@ package com.example.ropopescu.to_do_lost.db
 import android.provider.BaseColumns
 
 object TodoListDBContract {
-    const val DATABASE_VERSION = 1
+    const val DATABASE_VERSION = 2
     const val DATABASE_NAME = "todo_list_db"
 
     class TodoListItem: BaseColumns {
