@@ -21,4 +21,10 @@
         android:visible="false"
         app:showAsAction="always"
         />
+    <item
+        android:id="@+id/reminder_item"
+        android:title="@string/reminder"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:visible="false"
+        app:showAsAction="ifRoom" />
 </menu>

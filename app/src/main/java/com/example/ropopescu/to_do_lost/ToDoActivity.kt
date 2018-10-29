@@ -13,9 +13,9 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import com.example.ropopescu.to_do_lost.NewTaskDialogFragment.NewTaskDialogListener
+import com.example.ropopescu.to_do_lost.alarms.TimePickerFragment
 import com.example.ropopescu.to_do_lost.db.AppDatabase
 import com.example.ropopescu.to_do_lost.db.asyncdb.RetrieveTaskAsyncTask
-import com.example.ropopescu.to_do_lost.db.TodoListDBContract
 import com.example.ropopescu.to_do_lost.db.TodoListDBContract.DATABASE_NAME
 import com.example.ropopescu.to_do_lost.db.asyncdb.AddTaskAsyncTask
 import com.example.ropopescu.to_do_lost.db.asyncdb.DeleteTaskAsyncTask
@@ -92,10 +92,15 @@ class ToDoActivity : AppCompatActivity(), NewTaskDialogListener {
         inflater.inflate(R.menu.to_do_list_menu, menu)
         val editItem = menu?.findItem(R.id.edit_item)
         val deleteItem = menu?.findItem(R.id.delete_item)
+        val completeItem = menu?.findItem(R.id.complete_item)
+        val reminderItem = menu?.findItem(R.id.reminder_item)
 
         if(showMenuItems) {
             editItem?.isVisible = true
             deleteItem?.isVisible = true
+            completeItem?.isVisible = true
+            reminderItem?.isVisible = true
+
         }
         return true
     }
@@ -118,17 +123,19 @@ class ToDoActivity : AppCompatActivity(), NewTaskDialogListener {
             } else if(R.id.complete_item == item?.itemId) {
                 todoListItems[selectedItem].completed = 1
 
-
                 Snackbar.make(fab, "Task completed",
                         Snackbar.LENGTH_LONG).setAction("Action", null).show()
+            } else if(R.id.reminder_item == item?.itemId) {
+                TimePickerFragment.newInstance("task-desc")
+                        .show(supportFragmentManager, "MainActivity")
             }
         }
         return super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {
-
         super.onDestroy()
+        database?.close()
     }
 
     private fun showNewTaskUI() {

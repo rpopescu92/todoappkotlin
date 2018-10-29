@@ -10,4 +10,5 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="complete">Complete</string>
+    <string name="reminder">Reminder</string>
 </resources>
